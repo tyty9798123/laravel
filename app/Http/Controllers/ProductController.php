@@ -3,6 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Rules\ProductImage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+
 
 class ProductController extends Controller
 {
@@ -42,7 +47,6 @@ class ProductController extends Controller
     public function create()
     {
         //
-
         return view('product.create');
     }
 
@@ -54,14 +58,38 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        $diskName = "public";
+        $name = $request->file('product_image')->getClientOriginalName();
+        $path = $request->file('product_image')->storeAs(
+            'products',
+            $name,
+            $diskName
+        );
+        $url = Storage::disk($diskName)->url($path);
+        DB::table('products')->insert([
+            'name' => $request->input('product_name'),
+            'price' => $request->input('product_price'),
+            'image_url' => $url
+        ]);
+        return redirect()->route('products.index')->withErrors([$path]);
+
+        // $path = $request->file('product_image')->storeAs(
+        //     'products', "自定義名稱", "public"
+        // );
+        //$path = $request->file('product_image')->store('public');
         //
-        $validated = $request->validate([
+        /*
+        $validator = Validator::make($request->all(), [
             'product_name' => 'required|string|max:6',
             'product_price' => 'required|integer|min:0|max:9999',
-            'product_image' => ["required", "string", "regex:/^images\/\w+\.(png|jp?g)$/i"]
+            'product_image' => new ProductImage()
         ]);
-        
-        return redirect()->route('products.index');
+        if ($validator->fails()) {
+            return redirect('products/create')
+                        ->withErrors($validator)
+                        ->withInput();
+        }
+        */
     }
     /**
      * Show the form for editing the specified resource.

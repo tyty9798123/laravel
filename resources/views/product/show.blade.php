@@ -8,6 +8,8 @@
         <input type="number" min="1" id="quantity" value="1" />
         <button type="button" id="addToCart">Add to cart</button>
     </div>
+
+    
     <script>
         var productId = {{ $product['id'] }}
         initAddToCart(productId)
