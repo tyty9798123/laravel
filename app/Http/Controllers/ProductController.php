@@ -7,13 +7,23 @@ use App\Rules\ProductImage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use App\Models\Product;
+use App\Models\Category;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 
 class ProductController extends Controller
 {
-    function index(){
-        $products = $this->getProducts();
-        
+    function index(Request $req){
+        $category_id = $req->input('category_id');
+
+        if (!empty($category_id)){
+            $category = Category::find($category_id);
+            $products = $category->products;
+        }
+        else{
+            $products = Product::all();
+        }        
         return view('product.index', [
             "products" => $products
         ]);
@@ -22,22 +32,11 @@ class ProductController extends Controller
     function show($id, Request $req)
     {
         #$id = $req->input('id');
-        $products = $this->getProducts();
+        $product = Product::findOrFail($id);
 
-        $index = $id - 1;
-        if ($index >=0 && $index < count($products)) {
-            // show page
-            $product = $products[$index];
-            var_dump($product);
-    
-            return view('product.show', [
-                "product" => $product
-            ]);
-        }
-        else{
-            // 404 not found
-            abort(404);
-        }
+        return view('product.show', [
+            "product" => $product
+        ]);
     }
        /**
      * Show the form for creating a new resource.
@@ -66,11 +65,16 @@ class ProductController extends Controller
             $diskName
         );
         $url = Storage::disk($diskName)->url($path);
-        DB::table('products')->insert([
-            'name' => $request->input('product_name'),
-            'price' => $request->input('product_price'),
-            'image_url' => $url
-        ]);
+        $product = new Product();
+        $product->name = $request->input('product_name');
+        $product->price = $request->input('product_price');
+        $product->image_url = $url;
+        $product->save();
+        // Product::create([
+        //     'name' => $request->input('product_name'),ç
+        //     'price' => $request->input('product_price'),
+        //     'image_url' => $url
+        // ]);
         return redirect()->route('products.index')->withErrors([$path]);
 
         // $path = $request->file('product_image')->storeAs(
@@ -100,17 +104,14 @@ class ProductController extends Controller
     public function edit($id)
     {
         //
-        $products = $this->getProducts();
+        $product = Product::where('id', $id)->first();
 
-        $index = $id - 1;
-        if ($index >=0 && $index < count($products)) {
-            // show page
-            $product = $products[$index];
-            return view('product.edit', [
-                "product" => $product
-            ]);
+        if (is_null($product)){
+            abort(404);
         }
-
+        return view('product.edit', [
+            "product" => $product
+        ]);
     }
 
     /**
@@ -121,20 +122,41 @@ class ProductController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
-    {
-        $method = $request->method();
-        echo $method;
-
-        $products = $this->getProducts();
-
-        $index = $id - 1;
-        if ($index >=0 && $index < count($products)) {
-            // show page
-            $product = $products[$index];
-            return redirect()->route('products.edit', 
-                ["product" => $product['id']]
-            );
+    {   
+        #先進行驗證前面兩個資料
+        $validator = Validator::make($request->all(), [
+            'product_name' => 'required|string|max:6',
+            'product_price' => 'required|integer|min:0|max:9999',
+        ]);
+        #若資料有誤，回傳給使用者
+        if ($validator->fails())
+        {
+            return redirect()->route('products.edit', $id)->withErrors($validator->errors());
         }
+        $saveData = [
+            'name' => $request->input('product_name'),
+            'price' => $request->input('product_price'),
+            'brand_name' => $request->input('product_brand'),
+            'category_name' => $request->input('product_category')
+        ];
+        var_dump($saveData);
+        # 如果有上傳檔案，上傳後加入saveData陣列中
+        if ( $request->has('product_image') ){
+            $diskName = "public";
+            $name = $request->file('product_image')->getClientOriginalName();
+            $path = $request->file('product_image')->storeAs(
+                'products',
+                $name,
+                $diskName
+            );
+            $url = Storage::disk($diskName)->url($path);
+            $saveData["image_url"] = $url;
+        }
+        $product = Product::where('id', $id)->first();
+        $product->update($saveData);
+        return view('product.show', [
+            "product" => $product
+        ]);
 
 
         //
@@ -148,24 +170,15 @@ class ProductController extends Controller
      */
     public function destroy($id)
     {
-        //
-        echo "deleted";
+        $product = Product::find($id);
+        if (is_null($product)){
+            return redirect()->route('products.index');
+        }
+        $product->delete();
         return redirect()->route('products.index');
+
     }
     private function getProducts() {
-        return [
-            [
-                "id" => 1,
-                "name" => "Orange1",
-                "price" => "250",
-                "imageUrl" => asset('img/orange_01.jpeg')
-            ],
-            [
-                "id" => 2,
-                "name" => "Orange2",
-                "price" => "330",
-                "imageUrl" => asset('img/orange_02.jpeg')
-            ]
-        ];
+        return DB::table('products')->get();
     }
 }

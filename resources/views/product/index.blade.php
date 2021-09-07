@@ -5,15 +5,19 @@
     <a href="{{ route('products.create') }}">Create</a>
     <br>
     @foreach ($products as $product)
-        <a href="{{route('products.show', ['product' => $product['id']] )}}">
-            <img width="200" src="{{ $product['imageUrl'] }}">
+        <a href="{{route('products.show', ['product' => $product->id] )}}">
+            <img width="200" src="{{ $product->image_url }}">
         </a>
         <br>
-        <a href="{{route('products.edit', ['product' => $product['id']] )}}">
+        <a href="{{ route('products.index', ['category_id' => $product->category->id]) }}">
+            Category: {{ $product->category->name }}
+        </a>
+        <br>
+        <a href="{{route('products.edit', ['product' => $product->id] )}}">
             Edit
         </a>
         <br>
-        <form method="post" action="{{ route('products.destroy', ['product' => $product['id']] ) }}">
+        <form method="post" action="{{ route('products.destroy', ['product' => $product->id] ) }}">
             @csrf
             @method('delete')
             <input type="text" name="title">
