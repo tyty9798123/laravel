@@ -19,7 +19,7 @@ class ProductController extends Controller
 
         if (!empty($category_id)){
             $category = Category::find($category_id);
-            $products = $category->products;
+            $products = $category->allRelatedProducts();
         }
         else{
             $products = Product::all();

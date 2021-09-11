@@ -1,6 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
+    <div>
+        @foreach ($product->categoriesList() as $category)
+            @if ( !$loop->first )
+                <span>&nbsp;>>&nbsp;</span>
+            @endif
+            <a href="/products?category_id={{$category->id}}">
+                {{ $category->name }}
+            </a>
+        @endforeach
+    </div>
     <h1>{{ $product->name }}</h1>
     <img width="200" src="{{ $product->image_url }}">
     <div style="margin: 36px 0;">

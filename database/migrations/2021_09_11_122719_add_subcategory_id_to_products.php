@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddCategoryIdToProducts extends Migration
+class AddSubCategoryIdToProducts extends Migration
 {
     /**
      * Run the migrations.
@@ -15,8 +15,8 @@ class AddCategoryIdToProducts extends Migration
     {
         Schema::table('products', function (Blueprint $table) {
             //
-            $table->unsignedBigInteger('category_id');
-            $table->foreign('category_id')->references('id')->on('categories');
+            $table->unsignedBigInteger('subcategory_id');
+            $table->foreign('subcategory_id')->references('id')->on('subcategories');
         });
     }
 
@@ -29,7 +29,7 @@ class AddCategoryIdToProducts extends Migration
     {
         Schema::table('products', function (Blueprint $table) {
             //
-            $table->dropColumn('category_id');
+            $table->dropColumn('subcategory_id');
         });
     }
 }
